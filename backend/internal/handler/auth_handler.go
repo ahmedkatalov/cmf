@@ -22,7 +22,13 @@ func NewAuthHandler(auth *service.AuthService) http.Handler {
 	// ✅ Логин
 	r.Post("/login", h.login)
 
+	r.Get("/me", h.apiCheck)
+
 	return r
+}
+
+func (h *AuthHandler) apiCheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 type registerRootRequest struct {
