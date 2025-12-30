@@ -22,7 +22,6 @@ func New(dep Dependencies) http.Handler {
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 
-	// ✅ CORS (для фронта)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -31,30 +30,29 @@ func New(dep Dependencies) http.Handler {
 		MaxAge:           300,
 	}))
 
-	// Public routes
 	r.Route("/api", func(api chi.Router) {
+
+		// ---------- PUBLIC ----------
 		api.Mount("/auth", dep.AuthHandler)
-	})
 
-	// Protected routes
-	r.Route("/api", func(api chi.Router) {
-		api.Use(middleware.JWT(dep.JWTSecret))
+		// ---------- PROTECTED ----------
+		api.Group(func(pr chi.Router) {
+			pr.Use(middleware.JWT(dep.JWTSecret))
 
-		// ✅ Точки: owner/admin
-api.Route("/branches", func(br chi.Router) {
-    br.Use(middleware.RequireRoles("owner"))
-    br.Mount("/", dep.BranchHandler)
-})
+			// branches (owner)
+			pr.Route("/branches", func(br chi.Router) {
+				br.Use(middleware.RequireRoles("owner"))
+				br.Mount("/", dep.BranchHandler)
+			})
 
-		// ✅ Пользователи:
-		// owner/admin создают сотрудников в любых точках
-		// manager создаёт в своей точке
-api.Route("/users", func(u chi.Router) {
-    u.Use(middleware.RequireRoles("owner", "admin")) 
-    u.Mount("/", dep.UserHandler)
-})
-
+			// users (owner/admin)
+			pr.Route("/users", func(u chi.Router) {
+				u.Use(middleware.RequireRoles("owner", "admin"))
+				u.Mount("/", dep.UserHandler)
+			})
+		})
 	})
 
 	return r
 }
+
