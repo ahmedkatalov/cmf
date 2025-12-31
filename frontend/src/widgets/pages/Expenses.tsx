@@ -164,7 +164,7 @@ const Expenses: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl size="small" className="w-fit">
+            <FormControl size="small" className="w-40">
               <InputLabel>Категория</InputLabel>
               <Select
                 value={filterCategory}
@@ -182,7 +182,7 @@ const Expenses: React.FC = () => {
             <Button
               variant="contained"
               onClick={() => setOpen(true)}
-              sx={{ borderRadius: 2, textTransform: "none" }}
+              sx={{ borderRadius: 2, textTransform: "none", height: 40 }}
             >
               Добавить расход
             </Button>

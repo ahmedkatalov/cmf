@@ -14,9 +14,11 @@ export const AppRoutes: React.FC = () => {
 			<Route
 				path="/"
 				element={
+					<ProtectedRoute>
 						<MainLayout>
 							<Dashboard />
 						</MainLayout>
+					</ProtectedRoute>
 				}
 			/>
 			<Route path="/login" element={<LoginPage />} />

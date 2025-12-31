@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { useRegisterMutation } from "../api/authApi";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store/store";
 import Input from "@/shared/ui/Input";
 import Button from "@/shared/ui/Button";
 
 const RegisterPage: React.FC = () => {
+	const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
+	if (isAuthenticated) return <Navigate to="/" replace />;
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [organizationName, setOrganizationName] = useState("");
