@@ -12,13 +12,19 @@ import (
 
 type Dependencies struct {
 	JWTSecret string
-
+	
 	AuthHandler   http.Handler
 	BranchHandler http.Handler
 	UserHandler   http.Handler
+    MeHandler http.HandlerFunc
+
 
 	TransactionHandler http.Handler
 	SummaryHandler     http.Handler
+
+MetaHandler http.Handler
+
+
 }
 
 func New(dep Dependencies) http.Handler {
@@ -39,6 +45,10 @@ func New(dep Dependencies) http.Handler {
 
 		// ---------- PUBLIC ----------
 		api.Mount("/auth", dep.AuthHandler)
+		api.Mount("/meta", dep.MetaHandler)
+
+
+
 
 		// ---------- PROTECTED ----------
 		api.Group(func(pr chi.Router) {
@@ -57,13 +67,14 @@ func New(dep Dependencies) http.Handler {
 			})
 
 			// transactions (вносить/смотреть операции внутри своей точки)
-			// owner сможет смотреть любую точку через branch_id в query / body (это в handler сделано)
+			// ownhttps://pkg.go.dev/golang.org/x/tools/internal/typesinternal#IncompatibleAssigner сможет смотреть любую точку через branch_id в query / body (это в handler сделано)
 			pr.Route("/transactions", func(tr chi.Router) {
 				tr.Use(middleware.RequireRoles(
 					"owner", "admin", "manager", "accountant", "security", "employee",
 				))
 				tr.Mount("/", dep.TransactionHandler)
 			})
+pr.Get("/auth/me", dep.MeHandler)
 
 			// summary (отчётность)
 			// security/employee не должны видеть отчёт (по твоему требованию)

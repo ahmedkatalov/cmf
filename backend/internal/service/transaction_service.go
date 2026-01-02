@@ -24,7 +24,7 @@ func (s *TransactionService) Create(ctx context.Context, orgID, branchID string,
 	}
 
 	switch txType {
-	case "income", "expense_company", "expense_people":
+	case "income", "expense_company", "expense_people", "transfer_to_owner":
 	default:
 		return "", errors.New("invalid type")
 	}

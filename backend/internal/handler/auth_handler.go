@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/internal/middleware"
 	"backend/internal/service"
 	"encoding/json"
 	"net/http"
@@ -16,19 +17,41 @@ func NewAuthHandler(auth *service.AuthService) http.Handler {
 	h := &AuthHandler{auth: auth}
 	r := chi.NewRouter()
 
-	// ✅ Регистрация главной организации
+	// ✅ PUBLIC
 	r.Post("/register-root", h.registerRoot)
-
-	// ✅ Логин
 	r.Post("/login", h.login)
-
-	r.Get("/me", h.apiCheck)
 
 	return r
 }
 
-func (h *AuthHandler) apiCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+// ✅ PROTECTED HANDLER (будем монтировать отдельно)
+func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.CtxUserID).(string)
+	orgID := r.Context().Value(middleware.CtxOrgID).(string)
+	role := r.Context().Value(middleware.CtxRole).(string)
+
+	branchID, _ := r.Context().Value(middleware.CtxBranchID).(string)
+
+	// email мы кладём в токен, но не сохраняем в контекст.
+	// Чтобы достать email, лучше либо:
+	// 1) положить его в контекст в middleware.JWT
+	// 2) либо вернуть без email
+	// Я сделаю вариант 1 ниже (в middleware.JWT добавим CtxEmail)
+
+	email, _ := r.Context().Value(middleware.CtxEmail).(string)
+
+	resp := map[string]any{
+		"user_id": userID,
+		"org_id":  orgID,
+		"role":    role,
+		"email":   email,
+	}
+
+	if branchID != "" {
+		resp["branch_id"] = branchID
+	}
+
+	json.NewEncoder(w).Encode(resp)
 }
 
 type registerRootRequest struct {
