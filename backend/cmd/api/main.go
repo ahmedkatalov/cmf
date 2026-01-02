@@ -15,30 +15,42 @@ import (
 
 func main() {
 	cfg := config.Load()
+
 	pool := db.New(cfg.DatabaseURL)
 	defer pool.Close()
 
-	// Repos
+	// ---------- Repos ----------
 	orgRepo := repository.NewOrgRepo(pool)
 	branchRepo := repository.NewBranchRepo(pool)
 	userRepo := repository.NewUserRepo(pool)
+	txRepo := repository.NewTransactionRepo(pool)
 
-	// Services
+	// ---------- Services ----------
 	authService := service.NewAuthService(userRepo, orgRepo, branchRepo, cfg.JWTSecret)
 	branchService := service.NewBranchService(branchRepo)
 	userService := service.NewUserService(userRepo)
 
-	// Handlers
+	txService := service.NewTransactionService(txRepo)
+	summaryService := service.NewSummaryService(pool)
+
+	// ---------- Handlers ----------
 	authHandler := handler.NewAuthHandler(authService)
 	branchHandler := handler.NewBranchHandler(branchService)
 	userHandler := handler.NewUserHandler(userService)
 
-	// Router
+	txHandler := handler.NewTransactionHandler(txService)
+	summaryHandler := handler.NewSummaryHandler(summaryService)
+
+	// ---------- Router ----------
 	r := router.New(router.Dependencies{
-		JWTSecret:     cfg.JWTSecret,
+		JWTSecret: cfg.JWTSecret,
+
 		AuthHandler:   authHandler,
 		BranchHandler: branchHandler,
 		UserHandler:   userHandler,
+
+		TransactionHandler: txHandler,
+		SummaryHandler:     summaryHandler,
 	})
 
 	addr := fmt.Sprintf(":%s", cfg.Port)

@@ -3,8 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import LoginPage from "@/features/auth/ui/LoginPage";
 import RegisterPage from "@/features/auth/ui/RegisterPage";
 import Dashboard from "@/widgets/pages/app/Dashboard";
-import Income from "@/widgets/pages/Income";
-import Expenses from "@/widgets/pages/Expenses";
+import TransactionsPage from "@/widgets/pages/TransactionsPage";
+import Expenses from "@/widgets/pages/TransactionsPage";
 import MainLayout from "@/widgets/layout/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -28,7 +28,7 @@ export const AppRoutes: React.FC = () => {
 				element={
 					<ProtectedRoute>
 						<MainLayout>
-							<Income />
+							<TransactionsPage />
 						</MainLayout>
 					</ProtectedRoute>
 				}

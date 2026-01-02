@@ -1,8 +1,9 @@
 package router
 
 import (
-	"backend/internal/middleware"
 	"net/http"
+
+	"backend/internal/middleware"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -10,10 +11,14 @@ import (
 )
 
 type Dependencies struct {
-	JWTSecret     string
+	JWTSecret string
+
 	AuthHandler   http.Handler
 	BranchHandler http.Handler
 	UserHandler   http.Handler
+
+	TransactionHandler http.Handler
+	SummaryHandler     http.Handler
 }
 
 func New(dep Dependencies) http.Handler {
@@ -39,7 +44,7 @@ func New(dep Dependencies) http.Handler {
 		api.Group(func(pr chi.Router) {
 			pr.Use(middleware.JWT(dep.JWTSecret))
 
-			// branches (owner)
+			// branches (owner only)
 			pr.Route("/branches", func(br chi.Router) {
 				br.Use(middleware.RequireRoles("owner"))
 				br.Mount("/", dep.BranchHandler)
@@ -50,9 +55,24 @@ func New(dep Dependencies) http.Handler {
 				u.Use(middleware.RequireRoles("owner", "admin"))
 				u.Mount("/", dep.UserHandler)
 			})
+
+			// transactions (вносить/смотреть операции внутри своей точки)
+			// owner сможет смотреть любую точку через branch_id в query / body (это в handler сделано)
+			pr.Route("/transactions", func(tr chi.Router) {
+				tr.Use(middleware.RequireRoles(
+					"owner", "admin", "manager", "accountant", "security", "employee",
+				))
+				tr.Mount("/", dep.TransactionHandler)
+			})
+
+			// summary (отчётность)
+			// security/employee не должны видеть отчёт (по твоему требованию)
+			pr.Route("/summary", func(sr chi.Router) {
+				sr.Use(middleware.RequireRoles("owner", "admin", "manager", "accountant"))
+				sr.Mount("/", dep.SummaryHandler)
+			})
 		})
 	})
 
 	return r
 }
-

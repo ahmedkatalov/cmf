@@ -34,13 +34,12 @@ const authSlice = createSlice({
 	initialState,
 	reducers: {
 		setCredentials(state, action: PayloadAction<{ user: NonNullable<User>; token: string }>) {
-			console.log(action.payload);
 			state.user = action.payload.user;
 			state.token = action.payload.token;
 			state.isAuthenticated = true;
 			try {
 				if (typeof window !== "undefined") {
-					localStorage.setItem(STORAGE_KEY, JSON.stringify(state.token ));
+					localStorage.setItem(STORAGE_KEY, JSON.stringify(state.token ? { user: state.user, token: state.token } : null	));
 				}
 			} catch (e) {
 				// ignore storage errors

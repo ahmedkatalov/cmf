@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"backend/internal/repository"
+
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -80,4 +81,60 @@ func (s *AuthService) makeToken(userID, orgID string, branchID *string, role, em
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.jwtSecret)) // ✅ без лишней скобки
+}
+
+type UserClaims struct {
+	UserID    string  `json:"user_id"`
+	OrgID     string  `json:"org_id"`
+	BranchID  *string `json:"branch_id,omitempty"`
+	Role      string  `json:"role"`
+	Email     string  `json:"email"`
+	ExpiresAt int64   `json:"exp"`
+}
+
+// ParseToken parses a JWT token string and returns the user claims.
+func (s *AuthService) ParseToken(tokenStr string) (*UserClaims, error) {
+	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(s.jwtSecret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid claims")
+	}
+
+	uc := &UserClaims{}
+	if v, ok := claims["user_id"].(string); ok {
+		uc.UserID = v
+	} else {
+		return nil, errors.New("user_id missing in token")
+	}
+	if v, ok := claims["org_id"].(string); ok {
+		uc.OrgID = v
+	} else {
+		return nil, errors.New("org_id missing in token")
+	}
+	if v, ok := claims["role"].(string); ok {
+		uc.Role = v
+	}
+	if v, ok := claims["email"].(string); ok {
+		uc.Email = v
+	}
+	if v, ok := claims["branch_id"].(string); ok {
+		uc.BranchID = &v
+	}
+	if v, ok := claims["exp"].(float64); ok {
+		uc.ExpiresAt = int64(v)
+	}
+
+	return uc, nil
 }

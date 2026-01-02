@@ -19,11 +19,14 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
+import { useSelector } from "react-redux";
+import { useGetTransactionsByBranchQuery, useCreateTransactionMutation } from "@/features/transactions/api/transactionApi";
+import { useGetBranchesQuery } from "@/features/branch/api/branchApi";
 
 /* ================== TYPES ================== */
 
 interface Expense {
-  id: number;
+  id: string | number;
   category: "company" | "transfers";
   date: string; // YYYY-MM-DD
   amount: number;
@@ -53,18 +56,9 @@ const months = [
   { value: "12", label: "Декабрь" },
 ];
 
-const initialExpenses: Expense[] = [
-  { id: 1, category: "company", date: "2025-12-28", amount: 1200 },
-  { id: 2, category: "transfers", date: "2025-11-15", amount: 450 },
-  { id: 3, category: "company", date: "2025-12-05", amount: 800 },
-  { id: 4, category: "company", date: "2024-12-25", amount: 2300 },
-  { id: 5, category: "transfers", date: "2024-11-12", amount: 1500 },
-];
-
 /* ================== COMPONENT ================== */
 
-const Expenses: React.FC = () => {
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+const TransactionsPage: React.FC = () => {
   const [open, setOpen] = useState(false);
 
   const [newExpense, setNewExpense] = useState({
@@ -77,39 +71,66 @@ const Expenses: React.FC = () => {
   const [filterMonth, setFilterMonth] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
 
+  const selectedBranchFromStore = useSelector((s: any) => s.branch?.selected);
+  const { data: branches } = useGetBranchesQuery();
+  const branch = selectedBranchFromStore ?? branches?.[0];
+  const orgID = branch?.organization_id ?? "";
+  const branchID = branch?.id ?? "";
+
+  const { data: transactions = [], isLoading: txLoading, isError: txError, error: txErrorObj } = useGetTransactionsByBranchQuery(
+    { orgID, branchID },
+    { skip: !orgID || !branchID }
+  );
+
+  const [createTransaction] = useCreateTransactionMutation();
+
   /* ================== FILTERS ================== */
 
   const filteredExpenses = useMemo(() => {
-    return expenses.filter((e) => {
+    // map fetched transactions to local shape for filtering/display
+    const mapped = transactions.map((t: any) => ({
+      id: t.id,
+      category: t.type === "expense_company" ? "company" : "transfers",
+      date: t.occurred_at?.slice(0, 10) ?? t.created_at?.slice(0, 10) ?? "",
+      amount: t.amount,
+    })) as Expense[];
+
+    return mapped.filter((e) => {
       if (filterYear && !e.date.startsWith(filterYear)) return false;
       if (filterMonth && e.date.slice(5, 7) !== filterMonth) return false;
       if (filterCategory && e.category !== filterCategory) return false;
       return true;
     });
-  }, [expenses, filterYear, filterMonth, filterCategory]);
+  }, [transactions, filterYear, filterMonth, filterCategory]);
 
   const total = useMemo(
     () => filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0),
     [filteredExpenses]
   );
 
-  const years = Array.from(
-    new Set(expenses.map((e) => e.date.slice(0, 4)))
-  );
+  const years = Array.from(new Set((transactions || []).map((t: any) => (t.occurred_at || "").slice(0, 4)))).filter(Boolean);
 
   /* ================== HANDLERS ================== */
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     if (!newExpense.category || !newExpense.date || !newExpense.amount) return;
+    if (!orgID || !branchID) return;
 
-    const expense: Expense = {
-      id: Date.now(),
-      category: newExpense.category,
-      date: newExpense.date,
-      amount: newExpense.amount,
-    };
+    const txType = newExpense.category === "company" ? "expense_company" : "expense_people";
 
-    setExpenses((prev) => [...prev, expense]);
+    try {
+      await createTransaction({
+        organization_id: orgID,
+        branch_id: branchID,
+        type: txType,
+        amount: newExpense.amount,
+        occurred_at: newExpense.date,
+        description: null,
+      }).unwrap?.();
+    } catch (err) {
+      // ignore error here — could show notification
+    }
+
     setNewExpense({ category: "", date: "", amount: 0 });
     setOpen(false);
   };
@@ -276,4 +297,4 @@ const Expenses: React.FC = () => {
   );
 };
 
-export default Expenses;
+export default TransactionsPage;

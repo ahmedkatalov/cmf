@@ -4,6 +4,7 @@ import (
 	"backend/internal/service"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -22,13 +23,33 @@ func NewAuthHandler(auth *service.AuthService) http.Handler {
 	// ✅ Логин
 	r.Post("/login", h.login)
 
-	r.Get("/me", h.apiCheck)
+	r.Get("/me", h.me)
 
 	return r
 }
 
-func (h *AuthHandler) apiCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (h *AuthHandler) me(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "missing token", http.StatusUnauthorized)
+		return
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		http.Error(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	tokenStr := parts[1]
+	claims, err := h.auth.ParseToken(tokenStr)
+	if err != nil {
+		http.Error(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"claims": claims})
 }
 
 type registerRootRequest struct {

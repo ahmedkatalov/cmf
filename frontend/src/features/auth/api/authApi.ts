@@ -1,10 +1,11 @@
-import { baseApi } from "../../../app/api/baseApi";
-import { setCredentials } from "../../auth/model/authSlice";
+import { baseApi } from "@/app/api/baseApi";
+import { setCredentials } from "@/features/auth/model/authSlice";
+import type { AuthToken } from "../types/types";
 
 export const authApi = baseApi.injectEndpoints({
 	endpoints: (build) => ({
 		login: build.mutation<{ token: string; user: any }, { email: string; password: string }>({
-			query: (credentials) => ({ url: "/api/auth/login", method: "POST", body: credentials }),
+			query: (credentials) => ({ url: "/auth/login", method: "POST", body: credentials }),
 			async onQueryStarted(_, { dispatch, queryFulfilled }) {
 				try {
 					const { data } = await queryFulfilled;
@@ -15,7 +16,7 @@ export const authApi = baseApi.injectEndpoints({
 			},
 		}),
 		register: build.mutation<{ token: string; user: any }, { email: string; password: string; organization_name?: string }>({
-			query: (body) => ({ url: "/api/auth/register-root", method: "POST", body }),
+			query: (body) => ({ url: "/auth/register-root", method: "POST", body }),
 			async onQueryStarted(_, { dispatch, queryFulfilled }) {
 				try {
 					const { data } = await queryFulfilled;
@@ -25,7 +26,7 @@ export const authApi = baseApi.injectEndpoints({
 				}
 			},
 		}),
-		me: build.query<any, void>({
+		me: build.query<AuthToken, void>({
 			query: () => ({ url: "/auth/me" }),
 		}),
 	}),
