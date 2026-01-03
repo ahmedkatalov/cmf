@@ -21,14 +21,15 @@ type AuthService struct {
 
 func NewAuthService(users *repository.UserRepo, orgs *repository.OrgRepo, branches *repository.BranchRepo, jwtSecret string) *AuthService {
 	return &AuthService{
-		users: users,
-		orgs: orgs,
-		branches: branches,
+		users:     users,
+		orgs:      orgs,
+		branches:  branches,
 		jwtSecret: jwtSecret,
 	}
 }
 
-func (s *AuthService) RegisterRoot(ctx context.Context, orgName, email, password string) (string, error) {
+// ✅ Теперь регистрация owner требует fullName и phone (так как у всех пользователей есть эти поля)
+func (s *AuthService) RegisterRoot(ctx context.Context, orgName, fullName, phone, email, password string) (string, error) {
 	orgID, err := s.orgs.Create(ctx, orgName)
 	if err != nil {
 		return "", err
@@ -45,7 +46,9 @@ func (s *AuthService) RegisterRoot(ctx context.Context, orgName, email, password
 	}
 
 	branchID := mainBranchID
-	userID, err := s.users.Create(ctx, orgID, &branchID, email, string(hash), "owner")
+
+	// ✅ Новый Create: fullName, phone добавлены
+	userID, err := s.users.Create(ctx, orgID, &branchID, fullName, phone, email, string(hash), "owner")
 	if err != nil {
 		return "", err
 	}
@@ -80,7 +83,7 @@ func (s *AuthService) makeToken(userID, orgID string, branchID *string, role, em
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.jwtSecret)) // ✅ без лишней скобки
+	return token.SignedString([]byte(s.jwtSecret))
 }
 
 type UserClaims struct {
@@ -113,25 +116,37 @@ func (s *AuthService) ParseToken(tokenStr string) (*UserClaims, error) {
 	}
 
 	uc := &UserClaims{}
+
+	// required: user_id
 	if v, ok := claims["user_id"].(string); ok {
 		uc.UserID = v
 	} else {
 		return nil, errors.New("user_id missing in token")
 	}
+
+	// required: org_id
 	if v, ok := claims["org_id"].(string); ok {
 		uc.OrgID = v
 	} else {
 		return nil, errors.New("org_id missing in token")
 	}
+
+	// optional: role
 	if v, ok := claims["role"].(string); ok {
 		uc.Role = v
 	}
+
+	// optional: email
 	if v, ok := claims["email"].(string); ok {
 		uc.Email = v
 	}
+
+	// optional: branch_id
 	if v, ok := claims["branch_id"].(string); ok {
 		uc.BranchID = &v
 	}
+
+	// exp is float64 in jwt.MapClaims
 	if v, ok := claims["exp"].(float64); ok {
 		uc.ExpiresAt = int64(v)
 	}

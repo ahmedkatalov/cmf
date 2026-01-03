@@ -31,13 +31,6 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	role := r.Context().Value(middleware.CtxRole).(string)
 
 	branchID, _ := r.Context().Value(middleware.CtxBranchID).(string)
-
-	// email мы кладём в токен, но не сохраняем в контекст.
-	// Чтобы достать email, лучше либо:
-	// 1) положить его в контекст в middleware.JWT
-	// 2) либо вернуть без email
-	// Я сделаю вариант 1 ниже (в middleware.JWT добавим CtxEmail)
-
 	email, _ := r.Context().Value(middleware.CtxEmail).(string)
 
 	resp := map[string]any{
@@ -56,6 +49,8 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 
 type registerRootRequest struct {
 	OrganizationName string `json:"organization_name"`
+	FullName         string `json:"full_name"`
+	Phone            string `json:"phone"`
 	Email            string `json:"email"`
 	Password         string `json:"password"`
 }
@@ -67,7 +62,14 @@ func (h *AuthHandler) registerRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.auth.RegisterRoot(r.Context(), req.OrganizationName, req.Email, req.Password)
+	token, err := h.auth.RegisterRoot(
+		r.Context(),
+		req.OrganizationName,
+		req.FullName,
+		req.Phone,
+		req.Email,
+		req.Password,
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

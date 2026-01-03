@@ -12,8 +12,8 @@ func NewMeHandler() http.HandlerFunc {
 		orgID := r.Context().Value(middleware.CtxOrgID).(string)
 		role := r.Context().Value(middleware.CtxRole).(string)
 
-		branchID, _ := r.Context().Value(middleware.CtxBranchID).(string)
 		email, _ := r.Context().Value(middleware.CtxEmail).(string)
+		branchID, _ := r.Context().Value(middleware.CtxBranchID).(string)
 
 		resp := map[string]any{
 			"user_id": userID,

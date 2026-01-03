@@ -27,7 +27,7 @@ func main() {
 
 	// ---------- Services ----------
 	authService := service.NewAuthService(userRepo, orgRepo, branchRepo, cfg.JWTSecret)
-	branchService := service.NewBranchService(branchRepo, userRepo)
+	branchService := service.NewBranchService(branchRepo, userRepo, txRepo)
 	userService := service.NewUserService(userRepo)
 	txService := service.NewTransactionService(txRepo)
 	summaryService := service.NewSummaryService(pool)

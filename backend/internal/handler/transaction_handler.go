@@ -23,13 +23,16 @@ func NewTransactionHandler(tx *service.TransactionService) http.Handler {
 	r.Post("/", h.create)
 	r.Get("/", h.list)
 
+	// ✅ Cancel transaction (правильная отмена вместо delete)
+	r.Patch("/{id}/cancel", h.cancel)
+
 	return r
 }
 
 type createTransactionRequest struct {
 	// owner может передать branch_id, остальные игнорируются
 	BranchID    string  `json:"branch_id"`
-	Type        string  `json:"type"` // income | expense_company | expense_people
+	Type        string  `json:"type"` // income | expense_company | expense_people | transfer_to_owner
 	CategoryID  *string `json:"category_id"`
 	Amount      int64   `json:"amount"`
 	OccurredAt  string  `json:"occurred_at"` // YYYY-MM-DD
@@ -118,4 +121,33 @@ func (h *TransactionHandler) list(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(list)
+}
+
+// ✅ Cancel endpoint
+type cancelTransactionRequest struct {
+	Reason *string `json:"reason"`
+}
+
+func (h *TransactionHandler) cancel(w http.ResponseWriter, r *http.Request) {
+	orgID := r.Context().Value(middleware.CtxOrgID).(string)
+	role := r.Context().Value(middleware.CtxRole).(string)
+	userID := r.Context().Value(middleware.CtxUserID).(string)
+	branchCtx, _ := r.Context().Value(middleware.CtxBranchID).(string)
+
+	txID := chi.URLParam(r, "id")
+
+	var req cancelTransactionRequest
+	_ = json.NewDecoder(r.Body).Decode(&req) // reason optional
+
+	err := h.tx.Cancel(r.Context(), orgID, txID, role, branchCtx, userID, req.Reason)
+	if err != nil {
+		if err.Error() == "forbidden" {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

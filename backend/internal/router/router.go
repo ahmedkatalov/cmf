@@ -12,17 +12,18 @@ import (
 
 type Dependencies struct {
 	JWTSecret string
-	
+
 	AuthHandler   http.Handler
 	BranchHandler http.Handler
 	UserHandler   http.Handler
-    MeHandler http.HandlerFunc
-
 
 	TransactionHandler http.Handler
 	SummaryHandler     http.Handler
 
 	MetaHandler http.Handler
+
+	// ✅ ВАЖНО: MeHandler должен быть http.HandlerFunc (не http.Handler)
+	MeHandler http.HandlerFunc
 }
 
 func New(dep Dependencies) http.Handler {
@@ -49,20 +50,23 @@ func New(dep Dependencies) http.Handler {
 		api.Group(func(pr chi.Router) {
 			pr.Use(middleware.JWT(dep.JWTSecret))
 
-			// branches (owner only)
+			// ✅ /auth/me
+			pr.Get("/auth/me", dep.MeHandler)
+
+			// ✅ branches
+			// owner + admin могут заходить (admin может только PATCH своего филиала)
 			pr.Route("/branches", func(br chi.Router) {
-				br.Use(middleware.RequireRoles("owner"))
+				br.Use(middleware.RequireRoles("owner", "admin"))
 				br.Mount("/", dep.BranchHandler)
 			})
 
-			// users (owner/admin)
+			// ✅ users (owner/admin)
 			pr.Route("/users", func(u chi.Router) {
 				u.Use(middleware.RequireRoles("owner", "admin"))
 				u.Mount("/", dep.UserHandler)
 			})
 
-			// transactions (вносить/смотреть операции внутри своей точки)
-			// ownhttps://pkg.go.dev/golang.org/x/tools/internal/typesinternal#IncompatibleAssigner сможет смотреть любую точку через branch_id в query / body (это в handler сделано)
+			// ✅ transactions
 			pr.Route("/transactions", func(tr chi.Router) {
 				tr.Use(middleware.RequireRoles(
 					"owner", "admin", "manager", "accountant", "security", "employee",
@@ -70,10 +74,7 @@ func New(dep Dependencies) http.Handler {
 				tr.Mount("/", dep.TransactionHandler)
 			})
 
-			pr.Get("/auth/me", dep.MeHandler)
-
-			// summary (отчётность)
-			// security/employee не должны видеть отчёт (по твоему требованию)
+			// ✅ summary
 			pr.Route("/summary", func(sr chi.Router) {
 				sr.Use(middleware.RequireRoles("owner", "admin", "manager", "accountant"))
 				sr.Mount("/", dep.SummaryHandler)

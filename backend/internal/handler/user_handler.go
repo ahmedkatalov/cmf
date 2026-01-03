@@ -29,6 +29,10 @@ type createUserRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
+	FullName string `json:"full_name"`
+Phone    string `json:"phone"`
+
+
 }
 
 var allowedRoles = map[string]bool{
@@ -91,7 +95,8 @@ func (h *UserHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.users.Create(r.Context(), orgID, branchID, req.Email, req.Password, req.Role)
+id, err := h.users.Create(r.Context(), orgID, branchID, req.FullName, req.Phone, req.Email, req.Password, req.Role)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

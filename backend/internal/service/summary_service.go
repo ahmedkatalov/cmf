@@ -39,6 +39,8 @@ func (s *SummaryService) ByBranch(ctx context.Context, orgID, branchID string, f
 			COALESCE(SUM(CASE WHEN type IN ('expense_company','expense_people') THEN amount END), 0) AS total_expenses
 		FROM transactions
 		WHERE organization_id=$1 AND branch_id=$2 AND occurred_at >= $3 AND occurred_at < $4
+  AND is_cancelled = false
+
 	`, orgID, branchID, from, to).Scan(
 		&res.Income,
 		&res.ExpenseCompany,
