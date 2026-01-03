@@ -23,18 +23,12 @@ func NewBranchHandler(branches *service.BranchService) http.Handler {
 	// ✅ List branches
 	r.Get("/", h.list)
 
-<<<<<<< HEAD
 	// ✅ Get branch by id
 	r.Get("/{id}", h.getByID)
 
 	// ✅ Get users by branch id
 	r.Get("/{id}/users", h.usersByBranch)
 
-=======
-	// ✅ Получить точку по ID
-	r.Get("/{id}", h.getByID)
-
->>>>>>> 512879ce66463258d4ab363f62b7e9f08b04d422
 	return r
 }
 
