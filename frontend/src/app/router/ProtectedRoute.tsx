@@ -15,7 +15,7 @@ export const ProtectedRoute: React.FC<Props> = ({ children }) => {
 
 	useEffect(() => {
 	if (isSuccess && data) {
-		dispatch(updateUser(data.claims));
+		dispatch(updateUser(data));
 	}
 	}, [isSuccess, data, dispatch]);
 

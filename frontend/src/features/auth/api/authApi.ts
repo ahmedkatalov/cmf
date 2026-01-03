@@ -27,7 +27,9 @@ export const authApi = baseApi.injectEndpoints({
 			},
 		}),
 		me: build.query<AuthToken, void>({
-			query: () => ({ url: "/auth/me" }),
+			query: () => {
+				return { url: "/auth/me" }
+			},
 		}),
 	}),
 	overrideExisting: false,

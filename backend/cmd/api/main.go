@@ -24,11 +24,15 @@ func main() {
 	branchRepo := repository.NewBranchRepo(pool)
 	userRepo := repository.NewUserRepo(pool)
 	txRepo := repository.NewTransactionRepo(pool)
+meHandler := handler.NewMeHandler()
 
 	// ---------- Services ----------
 	authService := service.NewAuthService(userRepo, orgRepo, branchRepo, cfg.JWTSecret)
 	branchService := service.NewBranchService(branchRepo)
 	userService := service.NewUserService(userRepo)
+
+metaHandler := handler.NewMetaHandler()
+
 
 	txService := service.NewTransactionService(txRepo)
 	summaryService := service.NewSummaryService(pool)
@@ -44,6 +48,8 @@ func main() {
 	// ---------- Router ----------
 	r := router.New(router.Dependencies{
 		JWTSecret: cfg.JWTSecret,
+		MetaHandler: metaHandler,
+		MeHandler: meHandler,
 
 		AuthHandler:   authHandler,
 		BranchHandler: branchHandler,

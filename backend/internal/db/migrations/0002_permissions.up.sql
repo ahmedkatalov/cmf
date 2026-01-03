@@ -1,24 +1,29 @@
--- Справочник разрешений (permission codes)
+-- 0002_permissions.up.sql
+DROP TABLE IF EXISTS user_permissions CASCADE;
+DROP TABLE IF EXISTS role_permissions CASCADE;
+DROP TABLE IF EXISTS permissions CASCADE;
+
+-- Permission codes
 CREATE TABLE permissions (
   code TEXT PRIMARY KEY,
   description TEXT NOT NULL
 );
 
--- Какие permissions входят в роль по умолчанию
+-- Default permissions per role
 CREATE TABLE role_permissions (
   role VARCHAR(30) NOT NULL,
   permission_code TEXT NOT NULL REFERENCES permissions(code) ON DELETE CASCADE,
   PRIMARY KEY (role, permission_code)
 );
 
--- Индивидуальные permissions пользователю (добавить/забрать)
+-- Individual user permissions
 CREATE TABLE user_permissions (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   permission_code TEXT NOT NULL REFERENCES permissions(code) ON DELETE CASCADE,
   PRIMARY KEY (user_id, permission_code)
 );
 
--- 🚀 Заполним базовые permissions
+-- Fill permissions
 INSERT INTO permissions (code, description) VALUES
 ('branches:create', 'Создание точек/филиалов'),
 ('branches:view', 'Просмотр списка точек/филиалов'),
@@ -46,16 +51,15 @@ INSERT INTO permissions (code, description) VALUES
 ('summary:view', 'Просмотр финансового отчёта по точке'),
 ('summary:view_all', 'Просмотр отчёта по всем точкам организации');
 
--- ✅ Привяжем permissions к ролям (базовые правила)
--- OWNER: всё
+-- OWNER: all
 INSERT INTO role_permissions (role, permission_code)
 SELECT 'owner', code FROM permissions;
 
--- ADMIN: всё (как owner)
+-- ADMIN: all
 INSERT INTO role_permissions (role, permission_code)
 SELECT 'admin', code FROM permissions;
 
--- MANAGER: операционка точки + клиенты + договоры + платежи + сотрудники в своей точке
+-- MANAGER
 INSERT INTO role_permissions (role, permission_code) VALUES
 ('manager', 'users:create'),
 ('manager', 'users:view'),
@@ -78,14 +82,14 @@ INSERT INTO role_permissions (role, permission_code) VALUES
 
 ('manager', 'summary:view');
 
--- ACCOUNTANT: финансы + отчёты точки, без клиентов и договоров
+-- ACCOUNTANT
 INSERT INTO role_permissions (role, permission_code) VALUES
 ('accountant', 'payments:view'),
 ('accountant', 'transactions:create'),
 ('accountant', 'transactions:view'),
 ('accountant', 'summary:view');
 
--- SECURITY (СБ): поиск клиентов + просмотр карточек + внесение платежа, без создания клиентов и без summary
+-- SECURITY
 INSERT INTO role_permissions (role, permission_code) VALUES
 ('security', 'clients:view'),
 ('security', 'clients:search'),
@@ -93,7 +97,7 @@ INSERT INTO role_permissions (role, permission_code) VALUES
 ('security', 'payments:view'),
 ('security', 'contracts:view');
 
--- EMPLOYEE (кассир/обычный): внесение платежа + просмотр клиентов (опционально)
+-- EMPLOYEE
 INSERT INTO role_permissions (role, permission_code) VALUES
 ('employee', 'payments:create'),
 ('employee', 'payments:view'),
