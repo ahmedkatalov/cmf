@@ -15,6 +15,13 @@ type User struct {
 	Role           string
 }
 
+type UserPublic struct {
+	ID       string  `json:"id"`
+	Email    string  `json:"email"`
+	Role     string  `json:"role"`
+	BranchID *string `json:"branch_id"`
+}
+
 type UserRepo struct {
 	db *pgxpool.Pool
 }
@@ -47,22 +54,14 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*User, error) 
 	return &u, nil
 }
 
-
-type UserPublic struct {
-	ID       string  `json:"id"`
-	Email    string  `json:"email"`
-	Role     string  `json:"role"`
-	BranchID *string `json:"branch_id"`
-}
-
-func (r *UserRepo) ListByBranch(ctx context.Context, orgID, branchID string) ([]UserPublic, error) {
+// ✅ GET /branches/{id}/users
+func (r *UserRepo) ListByBranchPublic(ctx context.Context, orgID, branchID string) ([]UserPublic, error) {
 	rows, err := r.db.Query(ctx, `
 		SELECT id, email, role, branch_id
 		FROM users
 		WHERE organization_id=$1 AND branch_id=$2
 		ORDER BY created_at ASC
 	`, orgID, branchID)
-
 	if err != nil {
 		return nil, err
 	}

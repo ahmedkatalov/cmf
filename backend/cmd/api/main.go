@@ -27,10 +27,7 @@ func main() {
 
 	// ---------- Services ----------
 	authService := service.NewAuthService(userRepo, orgRepo, branchRepo, cfg.JWTSecret)
-
-	// ✅ ВАЖНО: BranchService теперь принимает userRepo, чтобы вернуть сотрудников филиала
 	branchService := service.NewBranchService(branchRepo, userRepo)
-
 	userService := service.NewUserService(userRepo)
 	txService := service.NewTransactionService(txRepo)
 	summaryService := service.NewSummaryService(pool)

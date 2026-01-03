@@ -17,12 +17,17 @@ func NewBranchHandler(branches *service.BranchService) http.Handler {
 	h := &BranchHandler{branches: branches}
 	r := chi.NewRouter()
 
-	// ✅ Создать точку (owner/admin)
+	// ✅ Create branch
 	r.Post("/", h.create)
-r.Get("/{id}", h.getByID)
 
-	// ✅ Список точек (owner/admin)
+	// ✅ List branches
 	r.Get("/", h.list)
+
+	// ✅ Get branch by id
+	r.Get("/{id}", h.getByID)
+
+	// ✅ Get users by branch id
+	r.Get("/{id}/users", h.usersByBranch)
 
 	return r
 }
@@ -66,11 +71,24 @@ func (h *BranchHandler) getByID(w http.ResponseWriter, r *http.Request) {
 	orgID := r.Context().Value(middleware.CtxOrgID).(string)
 	branchID := chi.URLParam(r, "id")
 
-	res, err := h.branches.GetWithUsers(r.Context(), orgID, branchID)
+	b, err := h.branches.GetByID(r.Context(), orgID, branchID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(b)
+}
+
+func (h *BranchHandler) usersByBranch(w http.ResponseWriter, r *http.Request) {
+	orgID := r.Context().Value(middleware.CtxOrgID).(string)
+	branchID := chi.URLParam(r, "id")
+
+	users, err := h.branches.ListUsers(r.Context(), orgID, branchID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(users)
 }
