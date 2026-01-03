@@ -24,16 +24,14 @@ func main() {
 	branchRepo := repository.NewBranchRepo(pool)
 	userRepo := repository.NewUserRepo(pool)
 	txRepo := repository.NewTransactionRepo(pool)
-meHandler := handler.NewMeHandler()
 
 	// ---------- Services ----------
 	authService := service.NewAuthService(userRepo, orgRepo, branchRepo, cfg.JWTSecret)
-	branchService := service.NewBranchService(branchRepo)
+
+	// ✅ ВАЖНО: BranchService теперь принимает userRepo, чтобы вернуть сотрудников филиала
+	branchService := service.NewBranchService(branchRepo, userRepo)
+
 	userService := service.NewUserService(userRepo)
-
-metaHandler := handler.NewMetaHandler()
-
-
 	txService := service.NewTransactionService(txRepo)
 	summaryService := service.NewSummaryService(pool)
 
@@ -41,15 +39,16 @@ metaHandler := handler.NewMetaHandler()
 	authHandler := handler.NewAuthHandler(authService)
 	branchHandler := handler.NewBranchHandler(branchService)
 	userHandler := handler.NewUserHandler(userService)
-
 	txHandler := handler.NewTransactionHandler(txService)
 	summaryHandler := handler.NewSummaryHandler(summaryService)
+
+	// meta + me
+	metaHandler := handler.NewMetaHandler()
+	meHandler := handler.NewMeHandler()
 
 	// ---------- Router ----------
 	r := router.New(router.Dependencies{
 		JWTSecret: cfg.JWTSecret,
-		MetaHandler: metaHandler,
-		MeHandler: meHandler,
 
 		AuthHandler:   authHandler,
 		BranchHandler: branchHandler,
@@ -57,6 +56,9 @@ metaHandler := handler.NewMetaHandler()
 
 		TransactionHandler: txHandler,
 		SummaryHandler:     summaryHandler,
+
+		MetaHandler: metaHandler,
+		MeHandler:   meHandler,
 	})
 
 	addr := fmt.Sprintf(":%s", cfg.Port)

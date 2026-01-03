@@ -19,6 +19,7 @@ func NewBranchHandler(branches *service.BranchService) http.Handler {
 
 	// ✅ Создать точку (owner/admin)
 	r.Post("/", h.create)
+r.Get("/{id}", h.getByID)
 
 	// ✅ Список точек (owner/admin)
 	r.Get("/", h.list)
@@ -59,4 +60,17 @@ func (h *BranchHandler) list(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(list)
+}
+
+func (h *BranchHandler) getByID(w http.ResponseWriter, r *http.Request) {
+	orgID := r.Context().Value(middleware.CtxOrgID).(string)
+	branchID := chi.URLParam(r, "id")
+
+	res, err := h.branches.GetWithUsers(r.Context(), orgID, branchID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(res)
 }
