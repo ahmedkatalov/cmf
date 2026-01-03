@@ -21,3 +21,12 @@ func (s *BranchService) Create(ctx context.Context, orgID, name, address string)
 func (s *BranchService) List(ctx context.Context, orgID string) ([]repository.Branch, error) {
 	return s.branches.ListByOrg(ctx, orgID)
 }
+
+func (s *BranchService) GetByID(
+	ctx context.Context,
+	orgID string,
+	branchID string,
+) (*repository.Branch, error) {
+	return s.branches.GetByID(ctx, orgID, branchID)
+}
+

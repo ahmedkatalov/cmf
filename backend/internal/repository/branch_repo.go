@@ -56,3 +56,29 @@ func (r *BranchRepo) ListByOrg(ctx context.Context, orgID string) ([]Branch, err
 
 	return list, nil
 }
+
+func (r *BranchRepo) GetByID(
+	ctx context.Context,
+	orgID string,
+	branchID string,
+) (*Branch, error) {
+	var b Branch
+
+	err := r.db.QueryRow(ctx,
+		`SELECT id, organization_id, name, COALESCE(address,'')
+		 FROM branches
+		 WHERE id = $1 AND organization_id = $2`,
+		branchID, orgID,
+	).Scan(
+		&b.ID,
+		&b.OrganizationID,
+		&b.Name,
+		&b.Address,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &b, nil
+}

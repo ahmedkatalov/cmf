@@ -25,6 +25,16 @@ services:
     depends_on:
       - db
 
+  migrations:
+    image: migrate/migrate:v4.15.2
+    container_name: finance_migrations
+    command: -path=/migrations -database "postgres://postgres:postgres@db:5432/finance?sslmode=disable" up
+    volumes:
+      - ./backend/internal/db/migrations:/migrations
+    depends_on:
+      - db
+    restart: "no"
+
   frontend:
     build: ./frontend
     container_name: finance_frontend

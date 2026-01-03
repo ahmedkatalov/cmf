@@ -22,9 +22,7 @@ type Dependencies struct {
 	TransactionHandler http.Handler
 	SummaryHandler     http.Handler
 
-MetaHandler http.Handler
-
-
+	MetaHandler http.Handler
 }
 
 func New(dep Dependencies) http.Handler {
@@ -46,9 +44,6 @@ func New(dep Dependencies) http.Handler {
 		// ---------- PUBLIC ----------
 		api.Mount("/auth", dep.AuthHandler)
 		api.Mount("/meta", dep.MetaHandler)
-
-
-
 
 		// ---------- PROTECTED ----------
 		api.Group(func(pr chi.Router) {
@@ -74,7 +69,8 @@ func New(dep Dependencies) http.Handler {
 				))
 				tr.Mount("/", dep.TransactionHandler)
 			})
-pr.Get("/auth/me", dep.MeHandler)
+
+			pr.Get("/auth/me", dep.MeHandler)
 
 			// summary (отчётность)
 			// security/employee не должны видеть отчёт (по твоему требованию)

@@ -13,6 +13,6 @@ export const baseApi = createApi({
 			return headers;
 		},
 	}),
-	tagTypes: ["Auth"],
+	tagTypes: ["Auth", "Branch", "Transaction", "Organization", "User"],
 	endpoints: () => ({}),
 });
